@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Викторина: Профессионалитет и нормативы СПО</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --error: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+        .header p { font-size: 0.9rem; opacity: 0.9; }
+
+        .progress-bar {
+            height: 6px;
+            background: #e2e8f0;
+            width: 100%;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .card-area {
+            padding: 24px;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .block-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: var(--primary-dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+
+        .question {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .option-btn.correct {
+            background: #dcfce7;
+            border-color: var(--success);
+            color: #14532d;
+        }
+
+        .option-btn.incorrect {
+            background: #fee2e2;
+            border-color: var(--error);
+            color: #7f1d1d;
+        }
+
+        .option-btn:disabled {
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 16px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary);
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback.show { display: block; }
+        .feedback strong { display: block; margin-bottom: 4px; color: var(--primary-dark); }
+
+        .controls {
+            padding: 20px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: var(--primary-dark); }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .results {
+            text-align: center;
+            padding: 40px 24px;
+            display: none;
+        }
+        .results.show { display: block; }
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🎓 Викторина: Профессионалитет</h1>
+        <p>Проверьте знания о проекте и нормативной базе СПО</p>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="card-area" id="quizArea">
+        <span class="block-badge" id="blockBadge">Блок 1</span>
+        <div class="question" id="questionText">Загрузка вопроса...</div>
+        <div class="options" id="optionsContainer"></div>
+        <div class="feedback" id="feedbackBox">
+            <strong id="feedbackTitle">Пояснение:</strong>
+            <span id="feedbackText"></span>
+        </div>
+    </div>
+
+    <div class="results" id="resultsArea">
+        <div class="score-circle" id="finalScore">0/0</div>
+        <h2>Викторина завершена!</h2>
+        <p style="color: var(--text-light); margin: 16px 0 24px;">Отличная работа. Вы ознакомились с ключевыми аспектами федерального проекта.</p>
+        <button class="btn" onclick="restartQuiz()">Пройти ещё раз</button>
+    </div>
+
+    <div class="controls" id="controlsArea">
+        <button class="btn" id="nextBtn" disabled>Следующий вопрос →</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        // БЛОК 1
+        {
+            block: "Блок 1. Базовые знания",
+            question: "В каком году стартовал федеральный проект «Профессионалитет»?",
+            options: ["2020", "2022", "2024", "2025"],
+            correct: 1,
+            explanation: "Проект был запущен по поручению Президента РФ в 2022 году."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "В составе какого национального проекта он реализуется?",
+            options: ["«Образование»", "«Молодёжь и дети»", "«Демография»", "«Производительность труда»"],
+            correct: 1,
+            explanation: "С 2025 года проект интегрирован в новый национальный проект «Молодёжь и дети» (ранее развивался в рамках нацпроекта «Образование»)."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Кто является федеральным оператором проекта по поручению Минпросвещения России?",
+            options: ["Рособрнадзор", "ИРПО", "«Россия — страна возможностей»", "РАНХиГС"],
+            correct: 1,
+            explanation: "Федеральным оператором выступает ФГБНУ «Институт развития профессионального образования» (ИРПО)."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Что является ключевой структурной единицей проекта?",
+            options: ["Технопарк", "Кластер", "Корпорация", "Учебный центр"],
+            correct: 1,
+            explanation: "Ключевая задача – создание образовательно-производственных кластеров, объединяющих колледжи и реальный сектор экономики."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Кто подписывает партнёрское соглашение внутри кластера?",
+            options: ["Только колледжи", "Только работодатели", "Все колледжи и предприятия кластера", "Правительство региона"],
+            correct: 2,
+            explanation: "Согласно документации, все колледжи и предприятия, входящие в кластер, подписывают партнерское соглашение."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Какую долю учебного времени занимает практика в рамках проекта?",
+            options: ["20%", "50%", "80%", "100%"],
+            correct: 2,
+            explanation: "Бесшовный переход на рабочее место обеспечивается тем, что практика занимает до 80% учебного времени."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Для кого созданы программы «Профессионалитета»?",
+            options: ["Только для выпускников 9 классов", "Только для выпускников 11 классов", "Для выпускников 9–11 классов", "Только для взрослых работников"],
+            correct: 2,
+            explanation: "Программа ориентирована на выпускников 9-11 классов, желающих быстро получить рабочую профессию."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Сколько ключевых отраслей экономики охватывают кластеры (согласно официальному перечню)?",
+            options: ["10", "19", "24", "30"],
+            correct: 2,
+            explanation: "В проекте представлено 24 отрасли, включая IT, машиностроение, атомную отрасль, сельское хозяйство и др."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Для чего создана платформа «Цифровой конструктор компетенций»?",
+            options: ["Для записи на курсы", "Для разработки программ под запросы работодателей", "Для подсчёта успеваемости", "Для профориентационных тестов"],
+            correct: 1,
+            explanation: "Платформа позволяет формировать интенсивные образовательные программы, ориентированные на потребности конкретных предприятий."
+        },
+        {
+            block: "Блок 1. Базовые знания",
+            question: "Что получают работодатели при софинансировании материально-технической базы кластера?",
+            options: ["Субсидии", "Налоговые преференции", "Гособоронзаказ", "Льготные кредиты"],
+            correct: 1,
+            explanation: "Одно из конкурентных преимуществ для бизнеса – налоговые преференции при условии софинансирования."
+        },
+
+        // БЛОК 2
+        {
+            block: "Блок 2. Нормативная база",
+            question: "На сколько максимально может быть сокращён срок и объём программы в форме профессионалитета?",
+            options: ["Не более чем на 20%", "Не более чем на 40%", "Не более чем на 50%", "Сокращение не допускается"],
+            correct: 1,
+            explanation: "Срок и объем программы могут быть уменьшены с учетом примерной программы, но не более чем на 40%."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Какие программы являются исключением из правила сокращения срока?",
+            options: ["Программы со сроком 10 месяцев на базе 11 классов", "Программы на базе 9 классов", "Программы по ИТ-специальностям", "Исключений нет"],
+            correct: 0,
+            explanation: "Программы подготовки, рассчитанные на 10 месяцев для выпускников 11 классов, уже являются максимально сжатыми и дальнейшему сокращению не подлежат."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "В какой форме осуществляется обучение по программам профессионалитета?",
+            options: ["Очная", "Очно-заочная", "Заочная", "Любая по выбору студента"],
+            correct: 0,
+            explanation: "Профессионалитет предполагает интенсивное практическое обучение на производстве, что реализуется исключительно в очной форме."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Каким документом утверждён Порядок организации и осуществления образовательной деятельности по программам СПО?",
+            options: ["Приказ Минпросвещения от 24.08.2022 № 762", "Приказ Минобрнауки от 09.01.2019 № 2", "Постановление Правительства РФ от 15.09.2020 № 1441", "ФЗ от 29.12.2012 № 273-ФЗ"],
+            correct: 0,
+            explanation: "Основной регулирующий документ – Приказ Минпросвещения России от 24.08.2022 № 762."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Каким приказом Минпросвещения утверждён порядок приёма на обучение по программам СПО?",
+            options: ["Приказ от 02.09.2020 № 457", "Приказ от 24.08.2022 № 762", "Приказ от 16.04.2026 № 274", "Приказ от 01.09.2021 № 666"],
+            correct: 0,
+            explanation: "Порядок приема регулируется Приказом Минпросвещения РФ от 02.09.2020 № 457 (с актуальными изменениями)."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "С какой даты понятие «профессионалитет» закреплено как форма организации образовательной деятельности в ФЗ «Об образовании»?",
+            options: ["С 1 сентября 2024 года", "С 1 января 2026 года", "С 1 сентября 2026 года", "С 1 сентября 2027 года"],
+            correct: 0,
+            explanation: "Федеральным законом от 08.08.2024 № 170-ФЗ изменения вступили в силу с 1 сентября 2024 года."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Какие регионы первыми присоединились к проекту в 2025 году (5 новых субъектов)?",
+            options: ["Запорожская обл., Херсонская обл., Республика Ингушетия, ЕАО, Севастополь", "Москва, Санкт-Петербург, Татарстан, Башкортостан, Новосибирская обл.", "Дагестан, Чечня, Крым, ДНР и ЛНР", "Алтай, Бурятия, Якутия, Чукотка, Камчатка"],
+            correct: 0,
+            explanation: "В 2025 году к реализации проекта присоединились 5 новых регионов: Запорожская и Херсонская области, Республика Ингушетия, Еврейская автономная область и Севастополь."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Какой показатель трудоустройства выпускников СПО по профилю планируется обеспечить в рамках проекта к 2030 году?",
+            options: ["65%", "75%", "85%", "95%"],
+            correct: 2,
+            explanation: "Стратегическая цель проекта – обеспечение трудоустройства не менее 85% выпускников по полученной специальности к 2030 году."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Сокращение срока обучения — это право или обязанность организации?",
+            options: ["Обязанность для всех колледжей", "Право организации", "Обязанность только для опорных колледжей", "Решается исключительно работодателем"],
+            correct: 1,
+            explanation: "Это право образовательной организации. Колледж может сократить срок и объем программы (до 40%), но не обязан делать это автоматически."
+        },
+        {
+            block: "Блок 2. Нормативная база",
+            question: "Меняется ли срок обучения для студентов, принятых до внедрения сокращённых программ?",
+            options: ["Да, срок сокращается автоматически", "Нет, программа идёт в сроках, указанных при приёме", "Да, но только с их согласия", "Да, по решению работодателя"],
+            correct: 1,
+            explanation: "Изменение срока обучения не имеет обратной силы для студентов, уже зачисленных на программу с определенным сроком освоения."
+        },
+
+        // БЛОК 3
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Все программы профессионалитета обязаны быть сокращены по срокам.",
+            options: ["Верно", "Неверно — сокращение до 40% возможно, но не обязательно"],
+            correct: 1,
+            explanation: "Сокращение является правом, а не обязанностью. Организация сама оценивает целесообразность сокращения."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Программы со сроком обучения 10 месяцев на базе 11 классов сокращать нельзя.",
+            options: ["Верно", "Неверно"],
+            correct: 0,
+            explanation: "Верно. Это минимально возможный срок освоения программы СПО, дальнейшее сокращение недопустимо."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Диплом выпускника «Профессионалитета» отличается от обычного диплома СПО.",
+            options: ["Верно", "Неверно — диплом стандартный СПО"],
+            correct: 1,
+            explanation: "Выпускники получают диплом государственного образца о среднем профессиональном образовании без специальных пометок о форме обучения."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Вузы могут участвовать в проекте, но не как основные площадки.",
+            options: ["Верно", "Неверно"],
+            correct: 0,
+            explanation: "Верно. Основными площадками являются колледжи и техникумы. Вузы могут выступать партнерами кластера или реализовывать программы СПО в своей структуре, но ядро проекта — среднее профобразование."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Работодатели участвуют в формировании региональных контрольных цифр приёма (КЦП).",
+            options: ["Верно", "Неверно"],
+            correct: 0,
+            explanation: "Верно. Отраслевые работодатели принимают непосредственное участие в формировании структуры и объема КЦП."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "В кластере выделяется «колледж, модернизируемый под ключ» при участии опорного работодателя.",
+            options: ["Верно", "Неверно"],
+            correct: 0,
+            explanation: "Верно. В каждом кластере определяется опорный колледж, который модернизируется под ключ с участием работодателя."
+        },
+        {
+            block: "Блок 3. Верно или неверно?",
+            question: "Учёба в профессионалитете строится с упором на теорию, практика уходит на второй план.",
+            options: ["Верно", "Неверно — упор на практику и IT"],
+            correct: 1,
+            explanation: "Неверно. Главная особенность проекта – упор на практику (до 80% времени) и современные производственные технологии."
+        }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const questionText = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const feedbackBox = document.getElementById('feedbackBox');
+    const feedbackTitle = document.getElementById('feedbackTitle');
+    const feedbackText = document.getElementById('feedbackText');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressFill = document.getElementById('progressFill');
+    const blockBadge = document.getElementById('blockBadge');
+    const quizArea = document.getElementById('quizArea');
+    const resultsArea = document.getElementById('resultsArea');
+    const controlsArea = document.getElementById('controlsArea');
+    const finalScore = document.getElementById('finalScore');
+
+    function loadQuestion() {
+        const q = quizData[currentQuestion];
+        blockBadge.textContent = q.block;
+        questionText.textContent = `${currentQuestion + 1}. ${q.question}`;
+        optionsContainer.innerHTML = '';
+        feedbackBox.classList.remove('show');
+        nextBtn.disabled = true;
+
+        q.options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            optionsContainer.appendChild(btn);
+        });
+
+        const progress = ((currentQuestion) / quizData.length) * 100;
+        progressFill.style.width = `${progress}%`;
+    }
+
+    function checkAnswer(selectedIndex, selectedBtn) {
+        const q = quizData[currentQuestion];
+        const buttons = optionsContainer.querySelectorAll('.option-btn');
+        
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (selectedIndex === q.correct) {
+            selectedBtn.classList.add('correct');
+            feedbackTitle.textContent = "✅ Верно!";
+            feedbackTitle.style.color = "var(--success)";
+            score++;
+        } else {
+            selectedBtn.classList.add('incorrect');
+            buttons[q.correct].classList.add('correct');
+            feedbackTitle.textContent = "❌ Неверно";
+            feedbackTitle.style.color = "var(--error)";
+        }
+
+        feedbackText.textContent = q.explanation;
+        feedbackBox.classList.add('show');
+        nextBtn.disabled = false;
+    }
+
+    nextBtn.onclick = () => {
+        currentQuestion++;
+        if (currentQuestion < quizData.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    };
+
+    function showResults() {
+        quizArea.classList.add('hidden');
+        controlsArea.classList.add('hidden');
+        progressFill.style.width = '100%';
+        resultsArea.classList.add('show');
+        finalScore.textContent = `${score}/${quizData.length}`;
+    }
+
+    function restartQuiz() {
+        currentQuestion = 0;
+        score = 0;
+        quizArea.classList.remove('hidden');
+        controlsArea.classList.remove('hidden');
+        resultsArea.classList.remove('show');
+        loadQuestion();
+    }
+
+    // Start
+    loadQuestion();
+</script>
+
+</body>
+</html>
